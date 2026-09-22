@@ -4,8 +4,7 @@
 -- Autor: Proyecto Backend FIUBA
 -- ============================================================
 
-DROP DATABASE IF EXISTS club_deportivo;
-CREATE DATABASE club_deportivo
+CREATE DATABASE IF NOT EXISTS club_deportivo
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
 
@@ -102,6 +101,22 @@ CREATE TABLE reservas (
         CHECK (precio_hora > 0 AND precio_total > 0)
 ) ENGINE=InnoDB;
 
+CREATE TABLE bloqueos (
+    id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_cancha         INT UNSIGNED NOT NULL,
+    fecha             DATE NOT NULL,
+    hora_inicio       TIME NOT NULL,
+    hora_fin          TIME NOT NULL,
+    motivo            VARCHAR(255) NOT NULL,
+
+    CONSTRAINT fk_bloqueos_cancha
+        FOREIGN KEY (id_cancha) REFERENCES canchas(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT chk_bloqueos_horas CHECK (hora_inicio < hora_fin),
+    CONSTRAINT chk_bloqueos_motivo CHECK (CHAR_LENGTH(TRIM(motivo)) > 0)
+) ENGINE=InnoDB;
+
 -- ============================================================
 -- ÍNDICES para acelerar búsquedas y validaciones de superposición
 -- ============================================================
@@ -113,6 +128,9 @@ CREATE INDEX idx_reservas_socio_fechas
 
 CREATE INDEX idx_reservas_estado
     ON reservas (estado);
+
+CREATE INDEX idx_bloqueos_cancha_fecha
+    ON bloqueos (id_cancha, fecha, hora_inicio, hora_fin);
 
 CREATE INDEX idx_canchas_deporte
     ON canchas (id_deporte);
