@@ -1,21 +1,9 @@
-# Entornos virtuales
-venv/
-env/
-.venv/
-Pipfile*
+.env
 __pycache__/
 *.py[cod]
-*$py.class
-
-# Variables de entorno
-.env
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-
-# Logs
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.coverage
 *.log
