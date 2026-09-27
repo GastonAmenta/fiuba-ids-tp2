@@ -5,8 +5,6 @@ from src.validators.common import reject_unknown_fields, require_json_object
 def validar_id_reserva(reservation_id):
     """
     Valida y normaliza el id de reserva.
-    Devuelve el id como entero positivo.
-    Lanza ValueError si es inválido.
     """
     return parse_id(reservation_id)
 
@@ -14,8 +12,6 @@ def validar_id_reserva(reservation_id):
 def validar_existencia_reserva(reserva):
     """
     Verifica que la reserva exista.
-    Si es None, devuelve la respuesta de error lista para retornar.
-    Si existe, devuelve None.
     """
     if reserva is None:
         return error(
@@ -30,11 +26,6 @@ def validar_existencia_reserva(reserva):
 def validar_cuerpo_estado(data):
     """
     Valida el body del PUT /reservas/{id}/estado.
-    - Debe ser un objeto JSON.
-    - No debe tener campos desconocidos.
-    - Debe tener 'estado' presente.
-    - El estado debe estar en RESERVATION_STATES.
-    Devuelve el estado solicitado (string) o lanza ValueError.
     """
     require_json_object(data)
     reject_unknown_fields(data, {"estado"})
@@ -49,10 +40,6 @@ def validar_cuerpo_estado(data):
 def validar_transicion_estado(reserva, estado_solicitado):
     """
     Valida las reglas de transición de estado.
-    Devuelve:
-      - None si la transición es válida y hay que aplicarla.
-      - una tupla (payload, status) si hay que responder éxito sin cambios.
-    Lanza ValueError si la transición es inválida (para mapear a 409).
     """
     estado_actual = reserva["estado"]
 
