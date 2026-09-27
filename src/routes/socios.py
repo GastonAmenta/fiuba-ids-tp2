@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from mysql.connector import Error
 
 from src.services.socios_service import create_member, get_member, list_members, update_member
-from src.utils import error, pagination_response, parse_bool, parse_id, parse_pagination, reject_unknown_query
+from src.utils import error, pagination_response, parse_bool, validar_id, parse_pagination, reject_unknown_query
 from src.validators.entities import validate_member
 
 
@@ -43,7 +43,7 @@ def post_socio():
 @socios_bp.route("/socios/<int:member_id>", methods=["GET"])
 def get_socio(member_id):
     try:
-        member_id = parse_id(member_id)
+        member_id = validar_id(member_id)
         member = get_member(member_id)
         if member is None:
             return error("SOCIO_NO_ENCONTRADO", "Socio inexistente", "No existe un socio con ese id", 404)
@@ -57,7 +57,7 @@ def get_socio(member_id):
 @socios_bp.route("/socios/<int:member_id>", methods=["PATCH"])
 def patch_socio(member_id):
     try:
-        member_id = parse_id(member_id)
+        member_id = validar_id(member_id)
         if get_member(member_id) is None:
             return error("SOCIO_NO_ENCONTRADO", "Socio inexistente", "No existe un socio con ese id", 404)
         data = validate_member(request.get_json(silent=True), partial=True)

@@ -39,6 +39,16 @@ def create_app():
 			"description": "La ruta no admite el método HTTP recibido"
 		}]}), 405
 
+	@app.errorhandler(400)
+	def bad_request(exc):
+		# Sin esto, los abort(400) de los validadores caerían en el handler de Exception y darían 500.
+		return jsonify({"errors": [{
+			"code": "ERROR_VALIDACION",
+			"message": "Solicitud inválida",
+			"level": "error",
+			"description": exc.description
+		}]}), 400
+
 	@app.errorhandler(Exception)
 	def internal_error(_error):
 		return jsonify({"errors": [{

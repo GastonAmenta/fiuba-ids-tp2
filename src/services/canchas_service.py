@@ -1,4 +1,4 @@
-from src.db import execute, fetch_all, fetch_one
+from src.db import execute, fetch_all, fetch_one,get_connection
 
 
 def list_courts(filters, limit, offset):
@@ -23,9 +23,47 @@ def list_courts(filters, limit, offset):
     return rows, count["total"]
 
 
-def get_court(court_id):
-    return fetch_one("SELECT id, nombre, id_deporte, precio_hora, techada, activa FROM canchas WHERE id = %s", (court_id,))
 
+
+def obtener_cancha(id_cancha):
+    """
+    GET /canchas/{id}
+    Devuelve Cancha por id
+    """
+    query= """
+            select * from canchas where id = %s
+            """
+    with get_connection() as c, c.cursor(dictionary=True) as cur:
+        cur.execute(query, (id_cancha,))
+        cancha = cur.fetchone()
+    return cancha
+
+
+def tiene_reservas(id_cancha):
+    """
+    True si la cancha tiene al menos una reserva, sin importar su estado.
+    """
+    query= """
+            select 1 from reservas where id_cancha = %s limit 1
+            """
+    with get_connection() as c, c.cursor(dictionary=True) as cur:
+        cur.execute(query, (id_cancha,))
+        reserva = cur.fetchone()
+    return reserva is not None
+
+
+def eliminar_cancha(id_cancha):
+    """
+    DELETE /canchas/{id}
+    Elimina la cancha por id. La route verifica antes que exista y no tenga reservas.
+    """
+    query= """
+            delete from canchas where id = %s
+            """
+    with get_connection() as c, c.cursor() as cur:
+        cur.execute(query, (id_cancha))
+        c.commit()
+ 
 
 def create_court(data):
     court_id = execute("""INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
@@ -39,8 +77,6 @@ def update_court(court_id, data):
     return get_court(court_id)
 
 
-def delete_court(court_id):
-    return execute("DELETE FROM canchas WHERE id = %s", (court_id,))
 
 
 def list_available(filters, start, end, limit, offset):

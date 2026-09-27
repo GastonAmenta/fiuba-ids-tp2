@@ -10,7 +10,7 @@ from src.services.bloqueos_service import (
     reservation_overlaps,
 )
 from src.services.canchas_service import get_court
-from src.utils import clean_record, clean_records, error, pagination_response, parse_date, parse_id, parse_pagination, reject_unknown_query
+from src.utils import clean_record, clean_records, error, pagination_response, parse_date, validar_id, parse_pagination, reject_unknown_query
 from src.validators.optional import validate_block
 
 
@@ -23,7 +23,7 @@ def get_bloqueos():
         reject_unknown_query({"id_cancha", "fecha", "_limit", "_offset"})
         filters = {}
         if "id_cancha" in request.args:
-            filters["id_cancha"] = parse_id(request.args["id_cancha"], "id_cancha")
+            filters["id_cancha"] = validar_id(request.args["id_cancha"], "id_cancha")
         if "fecha" in request.args:
             filters["fecha"] = parse_date(request.args["fecha"])
         limit, offset = parse_pagination()
@@ -58,7 +58,7 @@ def post_bloqueo():
 @bloqueos_bp.route("/bloqueos/<int:block_id>", methods=["DELETE"])
 def delete_bloqueo(block_id):
     try:
-        block_id = parse_id(block_id)
+        block_id = validar_id(block_id)
         if get_block(block_id) is None:
             return error("BLOQUEO_NO_ENCONTRADO", "Bloqueo inexistente", "No existe un bloqueo con ese id", 404)
         delete_block(block_id)

@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta
 from urllib.parse import urlencode
 
-from flask import request
+from flask import abort, request
 
 from src.constants import DEFAULT_LIMIT, GMT_MINUS_3, MAX_LIMIT
 
@@ -16,14 +16,12 @@ def error(code, message, description, status):
 	return body, status
 
 
-def parse_id(value, field="id"):
-	try:
-		number = int(value)
-	except (TypeError, ValueError):
-		raise ValueError(f"El campo '{field}' debe ser un entero positivo")
-	if number <= 0:
-		raise ValueError(f"El campo '{field}' debe ser un entero positivo")
-	return number
+def validar_id(valor, field="id"):
+	"""Recibe el id crudo (URL o query param) y devuelve un int positivo, o 400."""
+	valor = str(valor)
+	if not (valor.isascii() and valor.isdigit()) or int(valor) <= 0:
+		abort(400, description=f"El campo '{field}' debe ser un entero positivo")
+	return int(valor)
 
 
 def parse_bool(value, field):
