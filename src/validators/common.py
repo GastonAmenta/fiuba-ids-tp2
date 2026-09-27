@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from flask import abort
 from src.constants import (
     CLUB_CLOSING_HOUR,
     CLUB_OPENING_HOUR,
@@ -62,3 +62,10 @@ def validate_interval(start_text, end_text):
     if start.hour < CLUB_OPENING_HOUR or end.hour > CLUB_CLOSING_HOUR:
         raise ValueError("El intervalo debe estar entre las 08:00 y las 23:00")
     return start, end, duration
+
+
+def validar_params(args, permitidos=()):
+    """Rechaza query params que no estén en la whitelist."""
+    desconocidos = set(args.keys()) - set(permitidos)
+    if desconocidos:
+        abort(400, description=f"Parámetros desconocidos: {', '.join(sorted(desconocidos))}")

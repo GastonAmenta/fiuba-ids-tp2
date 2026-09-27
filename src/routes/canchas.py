@@ -3,8 +3,9 @@ from mysql.connector import Error
 
 from src.services.canchas_service import (
     create_court,
-    delete_court,
-    get_court,
+    obtener_cancha,
+    tiene_reservas,
+    eliminar_cancha,
     list_available,
     list_courts,
     update_court,
@@ -15,12 +16,13 @@ from src.utils import (
     pagination_response,
     parse_bool,
     parse_date,
-    parse_id,
+    validar_id,
     parse_pagination,
     reject_unknown_query,
 )
-from src.validators.common import validate_interval
+from src.validators.common import validate_interval,validar_params
 from src.validators.entities import validate_court
+from src.utils import error,validar_id
 
 
 canchas_bp = Blueprint("canchas", __name__)
@@ -29,7 +31,7 @@ canchas_bp = Blueprint("canchas", __name__)
 def _query_filters():
     filters = {}
     if "id_deporte" in request.args:
-        filters["id_deporte"] = parse_id(request.args["id_deporte"], "id_deporte")
+        filters["id_deporte"] = validar_id(request.args["id_deporte"], "id_deporte")
     if "nombre" in request.args:
         filters["nombre"] = request.args["nombre"]
     for field in ("techada", "activa"):
@@ -92,25 +94,12 @@ def get_disponibles():
         return error("ERROR_BASE_DATOS", "No se pudo consultar la disponibilidad", "La base de datos no está disponible", 500)
 
 
-@canchas_bp.route("/canchas/<int:court_id>", methods=["GET"])
-def get_cancha(court_id):
-    try:
-        court_id = parse_id(court_id)
-        court = get_court(court_id)
-        if court is None:
-            return error("CANCHA_NO_ENCONTRADA", "Cancha inexistente", "No existe una cancha con ese id", 404)
-        return jsonify(court), 200
-    except ValueError as exc:
-        return error("ERROR_VALIDACION", "Identificador inválido", str(exc), 400)
-    except Error:
-        return error("ERROR_BASE_DATOS", "No se pudo consultar la cancha", "La base de datos no está disponible", 500)
-
 
 @canchas_bp.route("/canchas/<int:court_id>", methods=["PATCH"])
 def patch_cancha(court_id):
     try:
-        court_id = parse_id(court_id)
-        if get_court(court_id) is None:
+        court_id = validar_id(court_id)
+        if obtener_cancha(court_id) is None:
             return error("CANCHA_NO_ENCONTRADA", "Cancha inexistente", "No existe una cancha con ese id", 404)
         data = validate_court(request.get_json(silent=True), partial=True)
         if not data:
@@ -123,17 +112,40 @@ def patch_cancha(court_id):
         return error("ERROR_BASE_DATOS", "No se pudo modificar la cancha", "La base de datos no está disponible", 500)
 
 
-@canchas_bp.route("/canchas/<int:court_id>", methods=["DELETE"])
-def delete_cancha(court_id):
+
+canchas_bp = Blueprint("canchas", __name__)
+
+@canchas_bp.route("/canchas/<id_cancha>", methods=["GET"])
+def obtener_canchas_por_id(id_cancha):
+
+    validar_params(request.args)
     try:
-        court_id = parse_id(court_id)
-        if get_court(court_id) is None:
-            return error("CANCHA_NO_ENCONTRADA", "Cancha inexistente", "No existe una cancha con ese id", 404)
-        delete_court(court_id)
-        return "", 204
+        id_cancha = validar_id(id_cancha)
     except ValueError as exc:
         return error("ERROR_VALIDACION", "Identificador inválido", str(exc), 400)
-    except Error as exc:
-        if getattr(exc, "errno", None) == 1451:
-            return error("CANCHA_CON_RESERVAS", "No se puede eliminar la cancha", "La cancha tiene reservas asociadas", 409)
-        return error("ERROR_BASE_DATOS", "No se pudo eliminar la cancha", "La base de datos no está disponible", 500)
+
+    cancha = obtener_cancha(id_cancha)
+    if cancha is None:
+            return error("CANCHA_NO_ENCONTRADA", "Cancha inexistente", "No existe una cancha con ese id", 404)
+
+    return jsonify(cancha)
+
+
+@canchas_bp.route("/canchas/<id_cancha>", methods=["DELETE"])
+def eliminar_cancha_por_id(id_cancha):
+
+    validar_params(request.args)
+    try:
+        id_cancha = validar_id(id_cancha)
+    except ValueError as exc:
+        return error("ERROR_VALIDACION", "Identificador inválido", str(exc), 400)
+
+    if obtener_cancha(id_cancha) is None:
+        return error("CANCHA_NO_ENCONTRADA", "Cancha inexistente", "No existe una cancha con ese id", 404)
+
+    if tiene_reservas(id_cancha):
+        return error("CANCHA_CON_RESERVAS", "La cancha tiene reservas", "No se puede eliminar una cancha con reservas, puede desactivarse mediante PATCH", 409)
+
+    
+    eliminar_cancha(id_cancha)
+    return "", 204
