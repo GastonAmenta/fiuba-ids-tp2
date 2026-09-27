@@ -10,16 +10,22 @@ from src.services.reservas_service import (
     create_reservations_transaction,
     find_court,
     find_member,
-    get_reservation,
+    obtener_reserva,
     has_overlap,
     reservation_query,
-    update_status,
+    actualizar_estado,
 )
 from src.services.bloqueos_service import block_overlaps
 from src.utils import clean_record, clean_records, error, now_gmt_minus_3, pagination_response, parse_date, parse_id, parse_pagination, reject_unknown_query
 from src.validators.common import require_json_object, reject_unknown_fields
 from src.validators.entities import validate_reservation
 from src.validators.optional import validate_recurring
+from src.validators.reservas import (
+    validar_cuerpo_estado,
+    validar_existencia_reserva,
+    validar_id_reserva,
+    validar_transicion_estado,
+)
 
 
 reservas_bp = Blueprint("reservas", __name__)
@@ -85,43 +91,51 @@ def post_reserva():
 @reservas_bp.route("/reservas/<int:reservation_id>", methods=["GET"])
 def get_reserva(reservation_id):
     try:
-        reservation = get_reservation(parse_id(reservation_id))
-        if reservation is None:
-            return error("RESERVA_NO_ENCONTRADA", "Reserva inexistente", "No existe una reserva con ese id", 404)
-        return jsonify(clean_record(reservation)), 200
+        id_reserva = validar_id_reserva(reservation_id)
     except ValueError as exc:
         return error("ERROR_VALIDACION", "Identificador inválido", str(exc), 400)
-    except Error:
-        return error("ERROR_BASE_DATOS", "No se pudo consultar la reserva", "La base de datos no está disponible", 500)
+
+    reserva = obtener_reserva(id_reserva)
+
+    if reserva is None:
+        return error("RESERVA_NO_ENCONTRADA", "Reserva inexistente", "No existe una reserva con ese id", 404)
+
+    return jsonify(clean_record(reserva)), 200
 
 
 @reservas_bp.route("/reservas/<int:reservation_id>/estado", methods=["PUT"])
 def put_estado(reservation_id):
     try:
-        reservation = get_reservation(parse_id(reservation_id))
-        if reservation is None:
-            return error("RESERVA_NO_ENCONTRADA", "Reserva inexistente", "No existe una reserva con ese id", 404)
-        data = request.get_json(silent=True)
-        require_json_object(data)
-        reject_unknown_fields(data, {"estado"})
-        if data.get("estado") not in RESERVATION_STATES:
-            return error("ESTADO_INVALIDO", "Estado desconocido", "El estado solicitado no es válido", 400)
-        requested = data["estado"]
-        if requested == reservation["estado"]:
-            return "", 204
-        now = now_gmt_minus_3()
-        if reservation["estado"] != "confirmada":
-            return error("TRANSICION_INVALIDA", "Transición no permitida", "Una reserva cancelada o finalizada no puede cambiar", 409)
-        if requested == "cancelada" and now >= reservation["fecha_hora_inicio"]:
-            return error("MOMENTO_INVALIDO", "No se puede cancelar", "El horario de inicio ya llegó", 409)
-        if requested == "finalizada" and now < reservation["fecha_hora_fin"]:
-            return error("MOMENTO_INVALIDO", "No se puede finalizar", "El horario de finalización todavía no llegó", 409)
-        update_status(reservation_id, requested)
-        return "", 204
+        id_reserva = validar_id_reserva(reservation_id)
     except ValueError as exc:
-        return error("ERROR_VALIDACION", "El cuerpo es inválido", str(exc), 400)
+        return error("ERROR_VALIDACION", "Identificador inválido", str(exc), 400)
+
+    reserva = obtener_reserva(id_reserva)
+
+    if reserva is None:
+        return error("RESERVA_NO_ENCONTRADA", "Reserva inexistente", "No existe una reserva con ese id", 404)
+
+    data = request.get_json(silent=True)
+
+    try:
+        estado_solicitado = validar_cuerpo_estado(data)
+    except ValueError as exc:
+        return error("ESTADO_INVALIDO", "Estado desconocido", str(exc), 400)
+
+    try:
+        resultado_transicion = validar_transicion_estado(reserva, estado_solicitado)
+    except ValueError as exc:
+        return error("TRANSICION_INVALIDA", "Transición no permitida", str(exc), 409)
+
+    if resultado_transicion is not None:
+        return resultado_transicion
+
+    try:
+        actualizar_estado(id_reserva, estado_solicitado)
     except Error:
         return error("ERROR_BASE_DATOS", "No se pudo actualizar el estado", "La base de datos no está disponible", 500)
+
+    return "", 204
 
 
 @reservas_bp.route("/reservas/recurrentes", methods=["POST"])

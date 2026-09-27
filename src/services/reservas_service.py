@@ -9,7 +9,7 @@ def reservation_query(where="", params=(), limit=None, offset=None):
         FROM reservas {where} ORDER BY id{pagination}""", values)
 
 
-def get_reservation(reservation_id):
+def obtener_reserva(reservation_id):
     return fetch_one("""SELECT id, id_socio, id_cancha, fecha_hora_inicio,
         fecha_hora_fin, estado, precio_hora, precio_total
         FROM reservas WHERE id = %s""", (reservation_id,))
@@ -38,12 +38,12 @@ def create_reservation(member_id, court_id, start, end, price, total):
     reservation_id = execute("""INSERT INTO reservas
         (id_socio, id_cancha, fecha_hora_inicio, fecha_hora_fin, estado, precio_hora, precio_total)
         VALUES (%s, %s, %s, %s, 'confirmada', %s, %s)""", (member_id, court_id, start, end, price, total), True)
-    return get_reservation(reservation_id)
+    return obtener_reserva(reservation_id)
 
 
-def update_status(reservation_id, status):
+def actualizar_estado(reservation_id, status):
     execute("UPDATE reservas SET estado = %s WHERE id = %s", (status, reservation_id))
-    return get_reservation(reservation_id)
+    return obtener_reserva(reservation_id)
 
 
 def create_reservations_transaction(reservations):
@@ -59,7 +59,7 @@ def create_reservations_transaction(reservations):
                 VALUES (%s, %s, %s, %s, 'confirmada', %s, %s)""", reservation)
             created_ids.append(cursor.lastrowid)
         connection.commit()
-        return [get_reservation(reservation_id) for reservation_id in created_ids]
+        return [obtener_reserva(reservation_id) for reservation_id in created_ids]
     except Exception:
         connection.rollback()
         raise
