@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from mysql.connector import Error
 
-from source.servicios.servicio_canchas import crear_cancha, listar_canchas
+from source.servicios.servicios_canchas import crear_cancha, listar_canchas
 from source.utiles import (
     limpiar_registros,
     error,
