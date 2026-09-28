@@ -3,7 +3,7 @@ from mysql.connector import Error
 
 from source.servicios.servicios_canchas import crear_cancha, listar_canchas, obtener_cancha, eliminar_cancha,tiene_reservas
 from source.utiles import (
-    limpiar_registros,
+    limpiar_historiales,
     error,
     respuesta_paginacion,
     analisis_bool,
@@ -39,7 +39,7 @@ def get_canchas():
         filas, total = listar_canchas(filtros, limit, offset)
         if not filas:
             return "", 204
-        return jsonify(respuesta_paginacion("canchas", limpiar_registros(filas), total, limit, offset)), 200
+        return jsonify(respuesta_paginacion("canchas", limpiar_historiales(filas), total, limit, offset)), 200
     except ValueError as exc:
         return error("ERROR_VALIDACION", "Parámetros inválidos", str(exc), 400)
     except Error:
@@ -51,7 +51,7 @@ def post_cancha():
     try:
         datos = request.get_json(silent=True)
         cancha_validada = validar_cancha(datos)
-        cancha = crear_cancha(datos)
+        cancha = crear_cancha(cancha_validada)
         return jsonify(cancha), 201
     except ValueError as exc:
         return error("ERROR_VALIDACION", "El cuerpo es inválido", str(exc), 400)
