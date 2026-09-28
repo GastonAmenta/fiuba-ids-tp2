@@ -1,4 +1,4 @@
-from src.utils import now_gmt_minus_3, parse_id
+from src.utils import now_gmt_minus_3, validar_id as parse_id
 from src.validators.common import reject_unknown_fields, require_json_object
 
 

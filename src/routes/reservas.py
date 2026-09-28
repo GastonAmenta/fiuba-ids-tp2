@@ -16,7 +16,7 @@ from src.services.reservas_service import (
     actualizar_estado,
 )
 from src.services.bloqueos_service import block_overlaps
-from src.utils import clean_record, clean_records, error, now_gmt_minus_3, pagination_response, parse_date, parse_id, parse_pagination, reject_unknown_query
+from src.utils import clean_record, clean_records, error, now_gmt_minus_3, pagination_response, parse_date, validar_id as parse_id , parse_pagination, reject_unknown_query
 from src.validators.common import require_json_object, reject_unknown_fields
 from src.validators.entities import validate_reservation
 from src.validators.optional import validate_recurring
