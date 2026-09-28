@@ -30,3 +30,41 @@ def crear_cancha(data):
         return_id=True
     )
     return get_cancha_id(cancha_id)
+
+
+def obtener_cancha(id_cancha):
+    """
+    GET /canchas/{id}
+    Devuelve Cancha por id
+    """
+    query= """
+            select * from canchas where id = %s
+            """
+   
+    cancha = fetch_one(query, (id_cancha,))
+    
+    return cancha
+
+
+def tiene_reservas(id_cancha):
+    """
+    True si la cancha tiene al menos una reserva, sin importar su estado.
+    """
+    query= """
+            select 1 from reservas where id_cancha = %s limit 1
+            """
+    reserva = fetch_one(query, (id_cancha,))
+    
+    return reserva is not None
+
+
+def eliminar_cancha(id_cancha):
+    """
+    DELETE /canchas/{id}
+    Elimina la cancha por id. La route verifica antes que exista y no tenga reservas.
+    """
+    query= """
+            delete from canchas where id = %s
+            """
+    execute(query, (id_cancha,))
+ 

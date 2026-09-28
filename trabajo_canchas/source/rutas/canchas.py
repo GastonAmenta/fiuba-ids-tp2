@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from mysql.connector import Error
 
-from source.servicios.servicios_canchas import crear_cancha, listar_canchas
+from source.servicios.servicios_canchas import crear_cancha, listar_canchas, obtener_cancha, eliminar_cancha,tiene_reservas
 from source.utiles import (
     limpiar_registros,
     error,
@@ -59,3 +59,38 @@ def post_cancha():
         if getattr(exc, "errno", None) == 1452:
             return error("DEPORTE_NO_ENCONTRADO", "Deporte inexistente", "El id_deporte no existe", 404)
         return error("ERROR_BASE_DATOS", "No se pudo crear la cancha", str(exc), 500)
+
+@canchas_bp.route("/canchas/<id_cancha>", methods=["GET"])
+def obtener_canchas_por_id(id_cancha):
+
+    rechazar_query_desconocida(request.args)
+    try:
+        id_cancha = analisis_id(id_cancha)
+    except ValueError as exc:
+        return error("ERROR_VALIDACION", "id invalido", str(exc), 400)
+
+    cancha = obtener_cancha(id_cancha)
+    if cancha is None:
+            return error("CANCHA_NO_ENCONTRADA", "Cancha inexistente", "no existe una cancha con ese id", 404)
+
+    return jsonify(cancha)
+
+
+@canchas_bp.route("/canchas/<id_cancha>", methods=["DELETE"])
+def eliminar_cancha_por_id(id_cancha):
+
+    rechazar_query_desconocida(request.args)
+    try:
+        id_cancha = analisis_id(id_cancha)
+    except ValueError as exc:
+        return error("ERROR_VALIDACION", "id invalido", str(exc), 400)
+
+    if obtener_cancha(id_cancha) is None:
+        return error("CANCHA_NO_ENCONTRADA", "Cancha inexistente", "no existe una cancha con ese id", 404)
+
+    if tiene_reservas(id_cancha):
+        return error("CANCHA_CON_RESERVAS", "La cancha tiene reservas", "no se puede eliminar una cancha con reservas,desactivarla mediante PATCH", 409)
+
+    
+    eliminar_cancha(id_cancha)
+    return "", 204
