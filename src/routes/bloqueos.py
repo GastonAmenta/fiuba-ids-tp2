@@ -9,7 +9,7 @@ from src.services.bloqueos_service import (
     list_blocks,
     reservation_overlaps,
 )
-from src.services.canchas_service import get_court
+from src.services.canchas_service import obtener_cancha as get_court
 from src.utils import clean_record, clean_records, error, pagination_response, parse_date, validar_id, parse_pagination, reject_unknown_query
 from src.validators.optional import validate_block
 
