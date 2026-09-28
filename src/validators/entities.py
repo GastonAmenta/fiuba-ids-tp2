@@ -5,6 +5,7 @@ from src.validators.common import (
     require_fields,
     require_json_object,
     validate_boolean,
+    validate_interval,
     validate_positive_integer,
     validate_text,
 )
@@ -18,6 +19,7 @@ def validate_court(data, partial=False):
     reject_unknown_fields(data, allowed)
     if not partial:
         require_fields(data, {"nombre", "id_deporte", "precio_hora"})
+
     result = {}
     if "nombre" in data:
         result["nombre"] = validate_text(data["nombre"], "nombre")
@@ -38,6 +40,7 @@ def validate_member(data, partial=False):
     reject_unknown_fields(data, allowed)
     if not partial:
         require_fields(data, {"nombre", "email"})
+
     result = {}
     if "nombre" in data:
         result["nombre"] = validate_text(data["nombre"], "nombre")
@@ -55,8 +58,9 @@ def validate_reservation(data):
     require_json_object(data)
     reject_unknown_fields(data, {"id_socio", "id_cancha", "fecha_hora_inicio", "fecha_hora_fin"})
     require_fields(data, {"id_socio", "id_cancha", "fecha_hora_inicio", "fecha_hora_fin"})
+
     member_id = validate_positive_integer(data["id_socio"], "id_socio")
     court_id = validate_positive_integer(data["id_cancha"], "id_cancha")
-    from src.validators.common import validate_interval
     start, end, duration = validate_interval(data["fecha_hora_inicio"], data["fecha_hora_fin"])
+
     return member_id, court_id, start, end, duration

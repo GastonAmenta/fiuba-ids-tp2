@@ -1,14 +1,29 @@
 from flask import Blueprint, jsonify, request
 from mysql.connector import Error
 
-from src.services.socios_service import create_member, get_member, list_members, update_member
-from src.utils import error, pagination_response, parse_bool, validar_id, parse_pagination, reject_unknown_query
+from src.services.socios_service import (
+    create_member,
+    get_member,
+    list_members,
+    update_member,
+)
+from src.utils import (
+    error,
+    pagination_response,
+    parse_bool,
+    parse_pagination,
+    reject_unknown_query,
+    validar_id,
+)
 from src.validators.entities import validate_member
 
 
 socios_bp = Blueprint("socios", __name__)
 
 
+# ---------------------------------------------------------------
+# GET /socios  → listar socios con filtros y paginación
+# ---------------------------------------------------------------
 @socios_bp.route("/socios", methods=["GET"])
 def get_socios():
     try:
@@ -27,6 +42,9 @@ def get_socios():
         return error("ERROR_BASE_DATOS", "No se pudieron consultar los socios", "La base de datos no está disponible", 500)
 
 
+# ---------------------------------------------------------------
+# POST /socios  → crear un socio
+# ---------------------------------------------------------------
 @socios_bp.route("/socios", methods=["POST"])
 def post_socio():
     try:
@@ -40,6 +58,9 @@ def post_socio():
         return error("ERROR_BASE_DATOS", "No se pudo crear el socio", str(exc), 500)
 
 
+# ---------------------------------------------------------------
+# GET /socios/<id>  → obtener un socio por id
+# ---------------------------------------------------------------
 @socios_bp.route("/socios/<int:member_id>", methods=["GET"])
 def get_socio(member_id):
     try:
@@ -54,6 +75,9 @@ def get_socio(member_id):
         return error("ERROR_BASE_DATOS", "No se pudo consultar el socio", "La base de datos no está disponible", 500)
 
 
+# ---------------------------------------------------------------
+# PATCH /socios/<id>  → actualizar parcialmente un socio
+# ---------------------------------------------------------------
 @socios_bp.route("/socios/<int:member_id>", methods=["PATCH"])
 def patch_socio(member_id):
     try:
